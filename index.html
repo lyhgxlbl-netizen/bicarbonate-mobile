@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>碳酸氢钠临床决策与计算助手 · 规培与住院医师床旁工具</title>
+  <style>
+:root {
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --ink: #152033;
+  --ink-2: #3A4658;
+  --line: #D5DEE8;
+  --navy: #142640;
+  --navy-soft: #D5E0EE;
+  --blue: #1D4ED8;
+  --ok-bg: #ECFDF5;
+  --ok-line: #6EE7B7;
+  --ok-ink: #155E3B;
+  --ok-badge: #047857;
+  --warn-bg: #FFFBEB;
+  --warn-line: #F6C87A;
+  --warn-ink: #78350F;
+  --warn-badge: #B45309;
+  --danger-bg: #FEF2F2;
+  --danger-line: #F1A8A8;
+  --danger-ink: #991B1B;
+  --danger-badge: #B91C1C;
+  --info-bg: #EFF6FF;
+  --info-line: #93C5FD;
+  --info-ink: #1E3A8A;
+  --muted-bg: #F3F5F8;
+  --muted-line: #CBD5E1;
+  --muted-ink: #334155;
+  --radius: 12px;
+  --shadow: none;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  /* clip does not create a scroll container, so position:sticky still works.
+     overflow-x:hidden on html/body makes overflow-y compute to auto and
+     sticky tabs scroll away with the page. */
+  overflow-x: clip;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+img, svg, video { max-width: 100%; height: auto; }
+
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+button, a, input, select, textarea, summary, label, .tab-btn, .chip, .drug-chip {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(20, 38, 64, 0.12);
+}
+
+.wrap {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding-left: max(16px, var(--safe-left));
+  padding-right: max(16px, var(--safe-right));
+}
+
+/* Header is compact and NOT sticky, so it does not swallow the screen. */
+.site-header {
+  background: var(--navy);
+  color: #fff;
+  padding-top: var(--safe-top);
+}
+
+.site-header .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--navy-soft);
+  font-weight: 500;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: var(--blue);
+  white-space: nowrap;
+}
+
+.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: translateY(0.5px); }
+
+.btn-secondary {
+  background: #fff;
+  color: var(--ink);
+  border-color: #C5D0DC;
+}
+
+.btn-ghost {
+  background: var(--muted-bg);
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+
+.main {
+  padding-top: 0;
+  padding-bottom: max(28px, calc(16px + var(--safe-bottom)));
+}
+
+/* Slim sticky tab bar only — not a large header. */
+.tablist {
+  position: sticky;
+  top: var(--safe-top);
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.tab-btn[aria-selected="true"] {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+.tab-btn .full { display: none; }
+
+.panel { margin-top: 14px; }
+.hidden { display: none !important; }
+
+.stack { display: flex; flex-direction: column; gap: 14px; }
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E8EEF4;
+}
+
+.block-head h2, .block h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.formula {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.unit-pill {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--muted-bg);
+  color: var(--navy);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+label.field-label,
+.field-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field-help {
+  font-weight: 500;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.field-stack { display: flex; flex-direction: column; gap: 12px; }
+
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10px;
+  row-gap: 12px;
+}
+
+.input-grid > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.input-grid .field-label {
+  min-height: calc(2 * 1.35em);
+  margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  align-content: flex-end;
+  gap: 0 0.35em;
+}
+
+.input-grid .field-label .field-help {
+  flex: 1 0 100%;
+}
+
+.input-grid .span-2 { grid-column: 1 / -1; }
+
+@supports (grid-template-rows: subgrid) {
+  .input-grid > div:not(.span-2) {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 2;
+    row-gap: 6px;
+  }
+  .input-grid > div:not(.span-2) .field-label {
+    min-height: 0;
+    margin-bottom: 0;
+  }
+}
+
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #C5D0DC;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+select {
+  font-weight: 500;
+  appearance: auto;
+  padding-right: 2.25rem;
+}
+
+.dil-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.65;
+  min-height: 24px;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+  accent-color: var(--blue);
+}
+
+.check-row.warn-accent input { accent-color: var(--warn-badge); }
+
+.chip-row, .drug-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip, .drug-chip {
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #C5D0DC;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover, .drug-chip:hover, .btn-secondary:hover { background: #F3F7FB; }
+
+.drug-chip.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+details.more {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0;
+}
+
+details.more > summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--navy);
+}
+
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+details.more[open] > summary::after { content: "▴"; }
+
+details.more .more-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid #E8EEF4;
+  padding-top: 10px;
+}
+
+.verdict {
+  border: 2px solid var(--warn-line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.verdict-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.verdict-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--warn-badge);
+}
+
+.verdict-guide {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.verdict h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.verdict-detail {
+  margin: 8px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.verdict-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(20, 32, 48, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.verdict-target {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.verdict--warn { background: var(--warn-bg); border-color: #F59E0B; color: #78350F; }
+.verdict--danger { background: var(--danger-bg); border-color: #F87171; color: #7F1D1D; }
+.verdict--ok { background: var(--ok-bg); border-color: #34D399; color: #064E3B; }
+.verdict--muted { background: var(--muted-bg); border-color: #94A3B8; color: #1E293B; }
+
+.verdict-badge--warn { background: var(--warn-badge); color: #fff; }
+.verdict-badge--danger { background: var(--danger-badge); color: #fff; }
+.verdict-badge--ok { background: var(--ok-badge); color: #fff; }
+.verdict-badge--muted { background: #475569; color: #fff; }
+
+.alerts { display: flex; flex-direction: column; gap: 8px; }
+
+.alert, .notice, .compat-box, .extravasation, .done-banner {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.alert-title, .compat-box .compat-title { font-weight: 700; }
+.alert-body { margin-top: 4px; }
+
+.alert--red, .notice--warn, .compat-box--danger, .extravasation {
+  background: var(--danger-bg);
+  border-color: #FCA5A5;
+  color: var(--danger-ink);
+}
+.alert--amber, .notice--amber {
+  background: var(--warn-bg);
+  border-color: #FCD34D;
+  color: var(--warn-ink);
+}
+.alert--blue {
+  background: var(--info-bg);
+  border-color: var(--info-line);
+  color: var(--info-ink);
+}
+.notice--muted {
+  background: var(--muted-bg);
+  border-color: var(--muted-line);
+  color: var(--muted-ink);
+}
+.compat-box--ok, .done-banner {
+  background: var(--ok-bg);
+  border-color: #6EE7B7;
+  color: var(--ok-ink);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.metric {
+  padding: 12px 14px;
+  border-top: 1px solid #E8EEF4;
+  min-width: 0;
+}
+.metric:first-child { border-top: 0; }
+
+.metric-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.metric-value {
+  margin-top: 2px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.metric-note {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: auto;
+}
+.metric-note--danger { color: #B91C1C; }
+.metric-note--warn { color: #92400E; }
+.metric-note--ok { color: #047857; }
+.metric-note--info { color: #1D4ED8; }
+
+.results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.result {
+  min-width: 0;
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--muted-bg);
+  border: 1px solid transparent;
+}
+
+.result-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  line-height: 1.35;
+}
+
+.result-value {
+  margin-top: 2px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.result-sub {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.result--primary {
+  background: var(--navy);
+  color: #fff;
+}
+.result--primary .result-label,
+.result--primary .result-sub { color: var(--navy-soft); }
+.result--primary .result-value { color: #fff; }
+
+.result--dose {
+  background: var(--info-bg);
+  border-color: var(--info-line);
+}
+.result--dose .result-label { color: var(--info-ink); }
+.result--dose .result-value { color: var(--blue); }
+.result--dose .result-sub { color: var(--info-ink); }
+
+.sliders {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.slider-val { color: var(--blue); white-space: nowrap; }
+
+input[type="range"] {
+  width: 100%;
+  height: 48px;
+  margin: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding-top: 12px;
+  border-top: 1px solid #E8EEF4;
+  font-size: 0.9375rem;
+}
+
+.quick-row input {
+  width: 6.5rem;
+  min-height: 48px;
+  text-align: center;
+}
+
+.quick-out {
+  font-weight: 600;
+  color: var(--blue);
+  flex: 1 1 12rem;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.steps li { margin: 0 0 8px; }
+.steps li:last-child { margin-bottom: 0; }
+
+.mix-box {
+  background: #EEF3F8;
+  border: 1px solid #D3DEEA;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.mix-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mix-top span:first-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.badge-dark {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.osm {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #D3DEEA;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.notice--warn, .dil-warn {
+  background: var(--warn-bg);
+  border: 1px solid #FCD34D;
+  color: var(--warn-ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.check-list { display: flex; flex-direction: column; gap: 8px; }
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.check-item input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  flex: 0 0 auto;
+  accent-color: var(--blue);
+}
+
+.check-item .t { font-size: 0.9375rem; font-weight: 700; color: var(--navy); }
+.check-item .d { margin-top: 4px; font-size: 0.875rem; color: var(--ink-2); line-height: 1.45; }
+
+.progress { font-size: 0.875rem; font-weight: 700; color: var(--blue); }
+
+.risk-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.risk {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.risk h3 { margin: 0; font-size: 0.9375rem; color: var(--navy); }
+.risk p { margin: 6px 0 0; font-size: 0.875rem; color: var(--ink-2); line-height: 1.45; }
+
+.site-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.toast {
+  position: fixed;
+  left: max(16px, var(--safe-left));
+  right: max(16px, var(--safe-right));
+  bottom: max(16px, var(--safe-bottom));
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 12px 16px;
+  border-radius: 10px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.2s ease;
+  text-align: center;
+}
+.toast.is-on { opacity: 1; }
+
+@media (min-width: 640px) {
+  .tab-btn { font-size: 0.9375rem; }
+  .tab-btn .full { display: inline; }
+  .tab-btn .short { display: none; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric {
+    display: grid;
+    grid-template-columns: minmax(7.25rem, 30%) minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: baseline;
+  }
+  .metric-label { grid-column: 1; grid-row: 1; }
+  .metric-value { grid-column: 2; grid-row: 1; margin-top: 0; }
+  .metric-note { grid-column: 2; grid-row: 2; }
+  .results { grid-template-columns: repeat(4, 1fr); }
+  .sliders { grid-template-columns: 1fr 1fr; }
+  .risk-grid { grid-template-columns: 1fr 1fr; }
+  .verdict-foot { flex-direction: row; align-items: center; justify-content: space-between; }
+  .toast { left: auto; right: max(20px, var(--safe-right)); bottom: max(20px, var(--safe-bottom)); width: auto; max-width: 22rem; text-align: left; }
+}
+
+@media (min-width: 960px) {
+  .site-header h1 { font-size: 1.25rem; }
+  .panel-grid { grid-template-columns: 5fr 7fr; }
+  .panel-grid.dose-grid { grid-template-columns: 7fr 5fr; }
+  .panel-grid.safety-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.dose-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.hint-tight { margin-bottom: 10px; }
+.compat-box-spaced { margin-top: 12px; }
+.banner-spaced { margin-top: 12px; }
+@media (min-width: 640px) {
+  .dose-fields { grid-template-columns: repeat(3, 1fr); }
+  .dil-fields { grid-template-columns: 1fr 1fr; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">麻醉科 / 重症医学科 · 规培与住院医师床旁辅助工具</p>
+        <h1>碳酸氢钠临床决策与计算助手</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <nav class="tablist" role="tablist" aria-label="功能模块">
+      <button id="tabBtnAssess" type="button" role="tab" aria-selected="true" aria-controls="panelAssess" class="tab-btn">
+        <span class="short">血气判读</span><span class="full">1. 血气判读与适应证决策</span>
+      </button>
+      <button id="tabBtnDose" type="button" role="tab" aria-selected="false" aria-controls="panelDose" class="tab-btn">
+        <span class="short">剂量配液</span><span class="full">2. 剂量换算与等渗配液</span>
+      </button>
+      <button id="tabBtnSafety" type="button" role="tab" aria-selected="false" aria-controls="panelSafety" class="tab-btn">
+        <span class="short">通路安全</span><span class="full">3. 通路配伍、核查清单与外渗急救</span>
+      </button>
+    </nav>
+
+    <section id="panelAssess" class="panel stack" role="tabpanel" aria-labelledby="tabBtnAssess">
+      <details class="more">
+        <summary>教学病例（演练 / 自测）</summary>
+        <div class="more-body">
+          <div class="chip-row">
+            <button id="presetSepsis" type="button" class="chip">脓毒性休克 + AKI 2期</button>
+            <button id="presetOrCase" type="button" class="chip">术中气腹 CO₂ 潴留（混合酸中毒）</button>
+            <button id="presetDka" type="button" class="chip">成人 DKA 伴低钾</button>
+            <button id="presetNagma" type="button" class="chip">肠瘘失碱（正常 AG）</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="panel-grid">
+        <div class="block field-stack">
+          <div class="block-head">
+            <h2>患者情境与血气参数</h2>
+            <button id="presetReset" type="button" class="btn btn-ghost">清空重填</button>
+          </div>
+
+          <div>
+            <label class="field-label" for="inScenario">主要临床场景</label>
+            <select id="inScenario">
+              <option value="sepsis">脓毒性休克 / 高乳酸血症（SSC）</option>
+              <option value="aki">急性肾损伤（AKI，无绝对急诊透析指征）</option>
+              <option value="nagma">正常 AG 失碱型（腹泻 / 肠瘘 / RTA / 高氯）</option>
+              <option value="dka">糖尿病酮症酸中毒（DKA / 含 euDKA）</option>
+              <option value="tox">毒物中毒（TCA 宽 QRS / 水杨酸盐）</option>
+              <option value="ca">心脏骤停（ACLS / ERC）</option>
+              <option value="or_mixed">围术期 / 气腹混合型酸血症</option>
+              <option value="ckd">慢性肾脏病（CKD 口服维持参考）</option>
+            </select>
+          </div>
+
+          <div class="checks">
+            <label class="check-row">
+              <input id="chkAki" type="checkbox" checked />
+              合并 KDIGO 2–3 期 AKI
+            </label>
+            <label class="check-row">
+              <input id="chkVent" type="checkbox" checked />
+              已保障有效肺泡通气排碳
+            </label>
+            <label class="check-row warn-accent">
+              <input id="chkPediatric" type="checkbox" />
+              儿童患者（DKA 严禁常规补碱）
+            </label>
+            <label class="check-row warn-accent">
+              <input id="chkUrgentRrt" type="checkbox" />
+              有绝对急诊 RRT 指征（难治高钾/肺水肿）
+            </label>
+          </div>
+
+          <div class="input-grid">
+            <div>
+              <label class="field-label" for="inPh">动脉血 pH</label>
+              <input id="inPh" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.001" min="6.5" max="7.8" value="7.17" />
+            </div>
+            <div>
+              <label class="field-label" for="inPaco2">PaCO₂ (mmHg)</label>
+              <input id="inPaco2" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.1" min="10" max="150" value="21" />
+            </div>
+            <div>
+              <label class="field-label" for="inHco3">HCO₃⁻ (mmol/L) <span class="field-help">可留空反推</span></label>
+              <input id="inHco3" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.1" min="1" max="60" value="7.5" placeholder="留空自动估算" />
+            </div>
+            <div>
+              <label class="field-label" for="inBe">碱剩余 BE (mEq/L)</label>
+              <input id="inBe" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.5" min="-40" max="30" value="-19" />
+            </div>
+            <div>
+              <label class="field-label" for="inNa">血钠 Na⁺ (mmol/L)</label>
+              <input id="inNa" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="1" min="100" max="190" value="138" />
+            </div>
+            <div>
+              <label class="field-label" for="inCl">血氯 Cl⁻ (mmol/L)</label>
+              <input id="inCl" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="1" min="60" max="150" value="104" />
+            </div>
+            <div>
+              <label class="field-label" for="inK">血钾 K⁺ (mmol/L)</label>
+              <input id="inK" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.1" min="1.5" max="10" value="4.6" />
+            </div>
+            <div>
+              <label class="field-label" for="inIca">游离钙 iCa²⁺ (mmol/L)</label>
+              <input id="inIca" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.01" min="0.4" max="2.0" value="1.12" />
+            </div>
+            <div class="span-2">
+              <label class="field-label" for="inWeight">患者体重 (kg) <span class="field-help">自动同步至第 2 页剂量计算</span></label>
+              <input id="inWeight" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="1" min="10" max="200" value="70" />
+            </div>
+          </div>
+          <p class="hint">提示：若血气屏仅显示 <strong>ctCO₂(B),c</strong> 而无独立 HCO₃⁻ 行，请将 HCO₃⁻ 留空，系统将按 Henderson-Hasselbalch 关系自动估算，避免错代全血总 CO₂。</p>
+        </div>
+
+        <div class="stack">
+          <div id="verdictBox" class="verdict">
+            <div class="verdict-top">
+              <span id="verdictBadge" class="verdict-badge"></span>
+              <span id="verdictGuideline" class="verdict-guide"></span>
+            </div>
+            <h3 id="verdictTitle"></h3>
+            <p id="verdictDetail" class="verdict-detail"></p>
+            <div class="verdict-foot">
+              <span id="verdictTarget" class="verdict-target"></span>
+              <button id="btnGoDose" type="button" class="btn">前往计算首剂与配液 →</button>
+            </div>
+          </div>
+
+          <div id="alertsBox" class="alerts"></div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">Winter 公式预计 PaCO₂</div>
+              <div id="outWinterRange" class="metric-value">--</div>
+              <div id="outWinterStatus" class="metric-note"></div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">阴离子间隙 AG</div>
+              <div id="outAgVal" class="metric-value">--</div>
+              <div id="outAgType" class="metric-note"></div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">血浆 HCO₃⁻（实测/估算）</div>
+              <div id="outHco3Used" class="metric-value">--</div>
+              <div id="outHco3Note" class="metric-note"></div>
+            </div>
+          </div>
+
+          <details class="more">
+            <summary>双向代偿验算与病理机制提示</summary>
+            <div class="more-body">
+              <div id="outMechExplain"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="panelDose" class="panel hidden stack" role="tabpanel" aria-labelledby="tabBtnDose">
+      <div class="panel-grid dose-grid">
+        <div class="block field-stack">
+          <div class="block-head">
+            <div>
+              <h2>首剂分次滴定计算器</h2>
+              <p class="formula">理论缺失量 (mmol) = |BE| × 体重 (kg) × 分布系数（严禁一次性全量纠正）</p>
+            </div>
+            <span class="unit-pill">5% 软袋：100 mL ≈ 59.5 mmol</span>
+          </div>
+
+          <div class="dose-fields">
+              <div>
+                <label class="field-label" for="doseWeight">体重 (kg)</label>
+                <input id="doseWeight" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="1" min="10" max="200" value="70" />
+              </div>
+              <div>
+                <label class="field-label" for="doseBe">碱缺失 |BE| (mEq/L)</label>
+                <input id="doseBe" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" step="0.5" min="0" max="40" value="19" />
+              </div>
+              <div>
+                <label class="field-label" for="doseFactor">分布系数</label>
+                <select id="doseFactor">
+                  <option value="0.20" selected>0.20（常规推荐）</option>
+                  <option value="0.23">0.23（部分英/爱指南）</option>
+                </select>
+              </div>
+          </div>
+
+          <div class="sliders">
+            <div>
+              <div class="slider-head">
+                <label for="doseFraction">首剂给药比例（推荐 1/3–1/2）</label>
+                <span id="lblFraction" class="slider-val">50% (1/2)</span>
+              </div>
+              <input id="doseFraction" type="range" min="33" max="50" step="1" value="50" />
+            </div>
+            <div>
+              <div class="slider-head">
+                <label for="doseMinutes">计划滴注时长（推荐 30–60 min）</label>
+                <span id="lblMinutes" class="slider-val">45 分钟</span>
+              </div>
+              <input id="doseMinutes" type="range" min="30" max="60" step="5" value="45" />
+            </div>
+          </div>
+
+          <div class="results">
+            <div class="result">
+              <div class="result-label">理论总缺失量</div>
+              <div id="outTotalMmol" class="result-value">--</div>
+              <div class="result-sub">仅作估算上限</div>
+            </div>
+            <div class="result result--primary">
+              <div class="result-label">推荐安全首剂</div>
+              <div id="outInitMmol" class="result-value">--</div>
+              <div id="outInitNa" class="result-sub">含等摩尔 Na⁺</div>
+            </div>
+            <div class="result result--dose">
+              <div class="result-label">国内 5% 碳酸氢钠</div>
+              <div id="outVol5" class="result-value">--</div>
+              <div id="outRate5" class="result-sub">泵速 -- mL/h</div>
+            </div>
+            <div class="result">
+              <div class="result-label">国际 8.4% / 4.2%</div>
+              <div id="outVol84" class="result-value">--</div>
+              <div id="outVol42" class="result-sub">4.2%：--</div>
+            </div>
+          </div>
+
+          <div id="outRateWarning" class="notice"></div>
+
+          <div class="quick-row">
+            <span style="font-weight:600;">快速换算：医嘱</span>
+            <input id="quickMmol" type="number" inputmode="decimal" autocomplete="off" spellcheck="false" min="1" max="500" step="5" value="30" />
+            <span>mmol =</span>
+            <div id="outQuickResult" class="quick-out"></div>
+          </div>
+        </div>
+
+        <div class="block field-stack">
+          <div class="block-head">
+            <div>
+              <h2>外周静脉等渗配液器（定容模式）</h2>
+              <p class="hint">高渗液（5% 约 1190 mOsm/L）原则上走 CVC；仅具外周通路时须稀释为等渗液</p>
+            </div>
+          </div>
+
+          <div class="dil-fields">
+            <div>
+              <label class="field-label" for="dilStock">手头原液规格</label>
+              <select id="dilStock">
+                <option value="5" selected>国内 5% 软袋</option>
+                <option value="8.4">国际 8.4% 制剂</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="dilFinalVol">目标终体积（5% GS）</label>
+              <select id="dilFinalVol">
+                <option value="500" selected>定容至 500 mL</option>
+                <option value="250">定容至 250 mL</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mix-box">
+            <div class="mix-top">
+              <span>床旁配制步骤</span>
+              <span id="dilConcBadge" class="badge-dark">--</span>
+            </div>
+            <ol id="dilSteps" class="steps"></ol>
+            <div id="dilOsmInfo" class="osm"></div>
+          </div>
+
+          <div class="dil-warn">
+            <strong>算术避坑提示：</strong>“定容至 500 mL”必须<strong>先从 500 mL 5% GS 中抽出等量液体</strong>再加入碳酸氢钠原液，而非直接向 500 mL 液体中追加；外周最高滴速 ≤ <strong>10 mL/kg/h</strong>（当前体重上限 <span id="dilMaxRate">--</span> mL/h）。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panelSafety" class="panel hidden stack" role="tabpanel" aria-labelledby="tabBtnSafety">
+      <div class="panel-grid safety-grid">
+        <div class="block">
+          <div class="block-head">
+            <h2>给药前五步安全核查清单</h2>
+            <span id="chkProgress" class="progress">0 / 5 已核对</span>
+          </div>
+          <div id="checklistItems" class="check-list">
+            <label class="check-item">
+              <input type="checkbox" class="safety-chk" />
+              <div>
+                <div class="t">1. 评估分型与代偿</div>
+                <div class="d">已核对 pH、PaCO₂、Winter 代偿及 AG，排除单纯呼吸性酸中毒与常规 DKA。</div>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" class="safety-chk" />
+              <div>
+                <div class="t">2. 保障有效肺泡通气</div>
+                <div class="d">确认分钟通气量足够排出反应生成的新增 CO₂，避免细胞内反常性酸中毒。</div>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" class="safety-chk" />
+              <div>
+                <div class="t">3. 核对血钾与游离钙</div>
+                <div class="d">确认 K⁺ ≥ 3.5 mmol/L（低钾先补钾）；iCa²⁺ 偏低者备好异路补钙，防范心律失常。</div>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" class="safety-chk" />
+              <div>
+                <div class="t">4. 沿管路核对独立通路</div>
+                <div class="d">从泵端追至患者端三通汇合口：高渗液走独立 CVC，严禁与升压药或含钙液共路。</div>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" class="safety-chk" />
+              <div>
+                <div class="t">5. 设定复查与停药终点</div>
+                <div class="d">首剂取 1/3–1/2 慢滴 30–60 min，结束后 10–15 min 复查血气/电解质，达 pH ≈ 7.30 即停。</div>
+              </div>
+            </label>
+          </div>
+          <div id="chkDoneBanner" class="done-banner hidden banner-spaced">
+            ✓ 五项给药前核查已全部确认。请缓慢滴注并严密监测 PaCO₂、K⁺、iCa²⁺ 与穿刺部位。
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="block">
+            <div class="block-head">
+              <h2>静脉配伍禁忌速查</h2>
+            </div>
+            <p class="hint hint-tight">点击下方常见术中/ICU 药物，查看与碳酸氢钠（pH ≈ 8.0）共路风险：</p>
+            <div id="drugChipGroup" class="drug-chips">
+              <button type="button" data-drug="ne" class="drug-chip active">去甲肾上腺素</button>
+              <button type="button" data-drug="epi" class="drug-chip">肾上腺素 / 多巴胺</button>
+              <button type="button" data-drug="ca" class="drug-chip">氯化钙 / 葡萄糖酸钙</button>
+              <button type="button" data-drug="rl" class="drug-chip">林格氏液 / 乳酸林格</button>
+              <button type="button" data-drug="mg" class="drug-chip">硫酸镁 / TPN</button>
+              <button type="button" data-drug="gs" class="drug-chip">5% GS / 0.9% NS</button>
+            </div>
+            <div id="drugCompatResult" class="compat-box compat-box-spaced"></div>
+          </div>
+
+          <div class="extravasation">
+            <strong>高渗外渗五步急救：</strong>① 立即停药 → ② 经原针头尽量回抽残液 → ③ 拔针并抬高患肢、局部温敷 → ④ 中重度外渗用 1% 利多卡因或透明质酸酶皮下环形浸润封闭 → ⑤ 请烧伤/伤口专科随访。
+          </div>
+
+          <details class="more">
+            <summary>四大医源性风险说明</summary>
+            <div class="more-body">
+              <div class="risk-grid">
+                <div class="risk">
+                  <h3>① 细胞内反常性酸中毒</h3>
+                  <p>脂溶性 CO₂ 迅速入胞释放 H⁺，通气受限时加重心肌与脑酸中毒。</p>
+                </div>
+                <div class="risk">
+                  <h3>② 氧解离曲线左移</h3>
+                  <p>pH 骤升逆转 Bohr 效应，短期内 2,3-DPG 来不及代偿，组织卸氧减少。</p>
+                </div>
+                <div class="risk">
+                  <h3>③ 电解质急性偏移</h3>
+                  <p>pH 每升 0.1：K⁺ 降 0.4–0.6 mmol/L、iCa²⁺ 降约 0.05 mmol/L。</p>
+                </div>
+                <div class="risk">
+                  <h3>④ 高钠与高渗负荷</h3>
+                  <p>5% 约 1190 mOsm/L、8.4% 达 2000 mOsm/L，警惕高钠与肺水肿。</p>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      仅用于住院医师规范化培训与临床教学辅助，不能替代个体化临床判断、药品说明书及院内静疗规范。<br />
+      依据 2018–2026 RCT 与多学科指南。
+    </footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+
+      const state = {
+        activeTab: "assess",
+        selectedDrug: "ne"
+      };
+
+      const DRUG_INFO = {
+        ne: {
+          level: "danger",
+          title: "严禁共路 · 去甲肾上腺素",
+          desc: "儿茶酚胺类在碱性碳酸氢钠溶液（pH ≈ 8.0）中迅速氧化失活，极易导致术中血压骤降。血管活性药须固定于独立 CVC 腔道，绝不可在同一三通推注或序贯混用。"
+        },
+        epi: {
+          level: "danger",
+          title: "严禁共路 · 肾上腺素 / 多巴胺 / 多巴酚丁胺",
+          desc: "碱性环境加速儿茶酚胺降解失效。必须另选独立管腔；如极端情况仅有一条通路，严禁擅自中断维持循环的升压药。"
+        },
+        ca: {
+          level: "danger",
+          title: "严禁共路 · 氯化钙 / 葡萄糖酸钙",
+          desc: "碳酸氢钠与钙离子混合会立即生成白色碳酸钙结晶沉淀，造成管路堵塞或微栓塞。低游离钙需补钙时必须走完全独立的静脉通道。"
+        },
+        rl: {
+          level: "danger",
+          title: "严禁共路 · 乳酸林格氏液 / 复方氯化钠",
+          desc: "林格氏液含有钙离子，与碳酸氢钠共路同样可产生碳酸钙沉淀。序贯输注前后须用 0.9% 生理盐水彻底冲管。"
+        },
+        mg: {
+          level: "danger",
+          title: "严禁共路 · 硫酸镁 / TPN 营养液",
+          desc: "与镁离子或含钙/磷酸盐的肠外营养液（TPN）配伍易产生沉淀或破坏乳剂稳定性，严禁共用管路。"
+        },
+        gs: {
+          level: "ok",
+          title: "可作稀释溶媒 / 冲管液 · 5% GS / 0.9% NS",
+          desc: "5% 葡萄糖注射液常用于床旁定容配制 1.25%–1.26% 等渗碳酸氢钠；0.9% 生理盐水可用于序贯给药前后冲管（但须注意钠、氯负荷，最终以具体制剂说明书为准）。"
+        }
+      };
+
+      const PRESETS = {
+        sepsis: {
+          scenario: "sepsis", aki: true, vent: true, pediatric: false, urgentRrt: false,
+          ph: 7.17, paco2: 21, hco3: 7.5, be: -19, na: 138, cl: 104, k: 4.6, ica: 1.12, weight: 70
+        },
+        orCase: {
+          scenario: "or_mixed", aki: false, vent: false, pediatric: false, urgentRrt: false,
+          ph: 7.187, paco2: 58.7, hco3: "", be: -6, na: 137, cl: 107, k: 4.4, ica: 1.16, weight: 65
+        },
+        dka: {
+          scenario: "dka", aki: false, vent: true, pediatric: false, urgentRrt: false,
+          ph: 7.10, paco2: 24, hco3: 8, be: -20, na: 134, cl: 98, k: 3.3, ica: 1.18, weight: 60
+        },
+        nagma: {
+          scenario: "nagma", aki: false, vent: true, pediatric: false, urgentRrt: false,
+          ph: 7.18, paco2: 27, hco3: 10, be: -17, na: 139, cl: 118, k: 3.8, ica: 1.15, weight: 68
+        }
+      };
+
+      function showToast(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("is-on");
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(() => {
+          t.classList.remove("is-on");
+        }, 2400);
+      }
+
+      function switchTab(tabName) {
+        state.activeTab = tabName;
+        const map = {
+          assess: { btn: $("tabBtnAssess"), panel: $("panelAssess") },
+          dose: { btn: $("tabBtnDose"), panel: $("panelDose") },
+          safety: { btn: $("tabBtnSafety"), panel: $("panelSafety") }
+        };
+        Object.keys(map).forEach((k) => {
+          const active = k === tabName;
+          map[k].btn.setAttribute("aria-selected", active ? "true" : "false");
+          map[k].panel.classList.toggle("hidden", !active);
+        });
+      }
+
+      function numVal(id) {
+        const raw = $(id).value.trim();
+        if (raw === "") return null;
+        const n = parseFloat(raw);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function updateAssessment() {
+        const scenario = $("inScenario").value;
+        const hasAki = $("chkAki").checked;
+        const hasVent = $("chkVent").checked;
+        const isPed = $("chkPediatric").checked;
+        const urgentRrt = $("chkUrgentRrt").checked;
+
+        const ph = numVal("inPh");
+        const paco2 = numVal("inPaco2");
+        const hco3In = numVal("inHco3");
+        const be = numVal("inBe");
+        const na = numVal("inNa");
+        const cl = numVal("inCl");
+        const k = numVal("inK");
+        const ica = numVal("inIca");
+        const weight = numVal("inWeight");
+
+        // Sync weight & |BE| to Dose tab
+        if (weight !== null && weight > 0) $("doseWeight").value = weight;
+        if (be !== null) $("doseBe").value = Math.abs(be);
+
+        // Estimate HCO3- via Henderson-Hasselbalch if blank
+        let hco3 = hco3In;
+        let hco3Estimated = false;
+        if (hco3 === null && ph !== null && paco2 !== null && paco2 > 0) {
+          hco3 = 0.03 * paco2 * Math.pow(10, ph - 6.1);
+          hco3Estimated = true;
+        }
+
+        // Output HCO3 card
+        if (hco3 !== null) {
+          $("outHco3Used").textContent = hco3.toFixed(1) + " mmol/L";
+          $("outHco3Note").textContent = hco3Estimated
+            ? "由 pH 与 PaCO₂ 反推估算（切勿直接错代 ctCO₂）"
+            : "采用用户输入实测值";
+        } else {
+          $("outHco3Used").textContent = "--";
+          $("outHco3Note").textContent = "请输入 pH、PaCO₂ 或 HCO₃⁻";
+        }
+
+        // Winter Formula
+        let winterStatusText = "待输入完整血气";
+        let respAcidosis = false;
+        let respAlkalosis = false;
+        let winterLow = null;
+        let winterHigh = null;
+        if (hco3 !== null) {
+          const mid = 1.5 * hco3 + 8;
+          winterLow = mid - 2;
+          winterHigh = mid + 2;
+          $("outWinterRange").textContent = winterLow.toFixed(1) + "–" + winterHigh.toFixed(1) + " mmHg";
+          if (paco2 !== null) {
+            if (paco2 > winterHigh + 0.5) {
+              respAcidosis = true;
+              winterStatusText = "实测 " + paco2 + " > 预计上限 → 合并呼吸性酸中毒";
+              $("outWinterStatus").className = "metric-note metric-note--danger";
+            } else if (paco2 < winterLow - 0.5) {
+              respAlkalosis = true;
+              winterStatusText = "实测 " + paco2 + " < 预计下限 → 合并呼吸性碱中毒";
+              $("outWinterStatus").className = "metric-note metric-note--warn";
+            } else {
+              winterStatusText = "实测 " + paco2 + " 位于预计范围 → 呼吸代偿适当";
+              $("outWinterStatus").className = "metric-note metric-note--ok";
+            }
+          } else {
+            $("outWinterStatus").className = "metric-note";
+          }
+          $("outWinterStatus").textContent = winterStatusText;
+        } else {
+          $("outWinterRange").textContent = "--";
+          $("outWinterStatus").textContent = winterStatusText;
+        }
+
+        // Anion Gap
+        let ag = null;
+        let agTypeText = "待输入 Na⁺、Cl⁻、HCO₃⁻";
+        if (na !== null && cl !== null && hco3 !== null) {
+          ag = na - cl - hco3;
+          $("outAgVal").textContent = ag.toFixed(1) + " mmol/L";
+          if (ag > 16) {
+            agTypeText = "高 AG 型（HAGMA · 有机酸蓄积）";
+            $("outAgType").className = "metric-note metric-note--warn";
+          } else {
+            agTypeText = "正常 AG 型（NAGMA · 失碱 / 高氯）";
+            $("outAgType").className = "metric-note metric-note--info";
+          }
+          $("outAgType").textContent = agTypeText;
+        } else {
+          $("outAgVal").textContent = "--";
+          $("outAgType").textContent = agTypeText;
+          $("outAgType").className = "metric-note";
+        }
+
+        // Bidirectional & Mechanism Explain
+        const mechLines = [];
+        if (ph !== null && ph <= 7.20) {
+          mechLines.push("• 当前 <strong>pH " + ph + " ≤ 7.20</strong>，已达<strong>重度酸血症</strong>定义阈值。");
+        } else if (ph !== null && ph < 7.35) {
+          mechLines.push("• 当前 <strong>pH " + ph + "</strong> 属于轻中度酸血症，多数非毒理场景应优先处理原发病与通气。");
+        } else if (ph !== null) {
+          mechLines.push("• 当前 <strong>pH " + ph + "</strong> 未处于酸血症区间，无急性静脉补碱指征。");
+        }
+
+        if (paco2 !== null && paco2 > 45 && hco3 !== null) {
+          const expAcuteHco3 = 24 + (paco2 - 40) / 10;
+          if (hco3 < expAcuteHco3 - 2) {
+            mechLines.push(
+              "• <strong>急性呼酸双向反查：</strong>PaCO₂ 升高 " + (paco2 - 40).toFixed(1) +
+              " mmHg，纯急性呼酸预计 HCO₃⁻ 应代偿升至约 <strong>" + expAcuteHco3.toFixed(1) +
+              " mmol/L</strong>，实际仅 " + hco3.toFixed(1) + " mmol/L → 提示<strong>急性呼酸为主 + 合并代谢性酸中毒</strong>，首要处理为改善通气/气腹，不可将后续 pH 上升单一归功于补碱。"
+            );
+          } else {
+            mechLines.push(
+              "• <strong>急性呼酸双向反查：</strong>PaCO₂ 显著升高（" + paco2 + " mmHg）且 HCO₃⁻ 接近急性呼酸代偿值（预计 ~" +
+              expAcuteHco3.toFixed(1) + " mmol/L），以呼吸性酸中毒为主，<strong>严禁单靠碳酸氢钠纠酸</strong>。"
+            );
+          }
+        }
+        if (ag !== null && ag > 16) {
+          mechLines.push("• <strong>高 AG 提示：</strong>原发病控制（灌注复苏/胰岛素）后，乳酸根与酮酸根可经肝代谢再生内源性 HCO₃⁻，急性期盲目全量补碱易致反跳性碱中毒。");
+        } else if (ag !== null) {
+          mechLines.push("• <strong>正常 AG 提示：</strong>若为腹泻/肠瘘/RTA 直接失碱，外源性补碱属于对因替代；若为大量 0.9% NS 所致高氯性酸中毒，优先换用平衡盐晶体液。");
+        }
+        $("outMechExplain").innerHTML = mechLines.join("<br>");
+
+        // Safety Interlocks
+        const alerts = [];
+        if (!hasVent || (paco2 !== null && paco2 > 45)) {
+          alerts.push({
+            type: "red",
+            title: "通气排碳拦截：存在 CO₂ 潴留或通气未保障",
+            body: "HCO₃⁻ + H⁺ ⇌ H₂O + CO₂；肺泡通气不足时补碱会致 PaCO₂ 进一步升高并加重心肌/脑细胞内反常性酸中毒，须先排查气道、呼吸机参数与气腹。"
+          });
+        }
+        if (k !== null && k < 3.5) {
+          alerts.push({
+            type: "red",
+            title: "低钾拦截：K⁺ = " + k + " mmol/L（< 3.5）",
+            body: "pH 每升高 0.1，血清 K⁺ 下降 0.4–0.6 mmol/L！必须先补钾后再评估补碱；若为 DKA 伴低钾，须先补钾并推迟胰岛素。"
+          });
+        }
+        if (ica !== null && ica < 0.90) {
+          alerts.push({
+            type: "amber",
+            title: "低游离钙预警：iCa²⁺ = " + ica + " mmol/L（< 0.90）",
+            body: "pH 每升高 0.1，iCa²⁺ 约降 0.05 mmol/L，易抑制心肌收缩。请经独立异路静脉补钙，严禁与碳酸氢钠共路。"
+          });
+        }
+        if (na !== null && na > 150) {
+          alerts.push({
+            type: "amber",
+            title: "高钠负荷预警：Na⁺ = " + na + " mmol/L（> 150）",
+            body: "每 100 mL 5% 碳酸氢钠额外带入约 60 mmol Na⁺，高钠或心衰/肺水肿患者须严控剂量或尽早评估 RRT。"
+          });
+        }
+        if (scenario === "dka") {
+          alerts.push({
+            type: "blue",
+            title: "DKA 围术期警示（含正常血糖 DKA / euDKA）",
+            body: "长期禁食、手术应激或术前用 SGLT2 抑制剂者血糖正常亦可发 DKA；高 AG 无法用乳酸解释时须查血 β-羟丁酸，主体治疗为补液、补钾与胰岛素。"
+          });
+        }
+        if (urgentRrt) {
+          alerts.push({
+            type: "red",
+            title: "存在绝对急诊 RRT 指征",
+            body: "合并难治性高钾血症、严重容量超负荷/肺水肿或尿毒症心包炎时，不应以静脉补碱替代或延误紧急肾脏替代治疗（RRT）。"
+          });
+        }
+
+        $("alertsBox").innerHTML = alerts.map((a) => {
+          return '<div class="alert alert--' + a.type + '"><div class="alert-title">' + a.title + '</div><div class="alert-body">' + a.body + '</div></div>';
+        }).join("");
+
+        // Guideline Decision Verdict
+        let vStyle = "bg-amber-50 border-amber-400 text-amber-950";
+        let vBadge = "条件性考虑";
+        let vBadgeCls = "bg-amber-600 text-white";
+        let vGuide = "";
+        let vTitle = "";
+        let vDetail = "";
+        let vTarget = "参考停药目标：pH ≈ 7.30 或 HCO₃⁻ 15–18 mmol/L（个体化调整）";
+
+        if (ph === null) {
+          vStyle = "bg-slate-50 border-slate-300 text-slate-800";
+          vBadge = "待输入血气";
+          vBadgeCls = "bg-slate-500 text-white";
+          vGuide = "输入动脉血 pH 开始判定";
+          vTitle = "请输入患者动脉血气参数";
+          vDetail = "输入 pH、PaCO₂ 及电解质后，系统将自动完成 Winter 代偿验算、AG 分型及多学科指南推荐判定。";
+        } else if (urgentRrt) {
+          vStyle = "bg-red-50 border-red-400 text-red-950";
+          vBadge = "优先启动 RRT";
+          vBadgeCls = "bg-red-600 text-white";
+          vGuide = "KDIGO 2026 草案 · 急诊透析优先";
+          vTitle = "存在绝对急诊透析指征，请直接评估并启动 RRT";
+          vDetail = "静脉碳酸氢钠仅适用于无绝对急诊透析指征时的缓冲过渡，不能替代紧急 RRT 处理难治高钾或肺水肿。";
+          vTarget = "建议立即联系重症/肾内科评估床旁 CRRT";
+        } else if (scenario === "tox") {
+          vStyle = "bg-emerald-50 border-emerald-500 text-emerald-950";
+          vBadge = "强推荐 · 首选解毒";
+          vBadgeCls = "bg-emerald-700 text-white";
+          vGuide = "ACLS / 临床毒理共识";
+          vTitle = "推荐积极静脉应用碳酸氢钠解毒碱化";
+          vDetail = "TCA 中毒伴宽 QRS 波时以高浓度 Na⁺ 与血液碱化拮抗快钠通道阻滞；水杨酸盐中毒通过碱化尿液利用离子俘获加速排泄。";
+          vTarget = "目标：TCA 血液 pH 7.45–7.55；水杨酸盐尿液 pH 7.5–8.0";
+        } else if (scenario === "dka") {
+          if (isPed) {
+            vStyle = "bg-red-50 border-red-400 text-red-950";
+            vBadge = "严格不推荐";
+            vBadgeCls = "bg-red-600 text-white";
+            vGuide = "ISPAD 儿童青少年 DKA 指南";
+            vTitle = "儿童 DKA 严禁常规静脉补碱";
+            vDetail = "补碱显著增加儿童医源性脑水肿与重度低钾风险；请优先规范补液、监测血钾并予小剂量胰岛素。";
+            vTarget = "核心治疗：补液 + 钾管理 + 胰岛素";
+          } else if (ph < 6.90) {
+            vStyle = "bg-amber-50 border-amber-400 text-amber-950";
+            vBadge = "极重度可考虑";
+            vBadgeCls = "bg-amber-600 text-white";
+            vGuide = "ADA 指南 / 2024 国际高血糖危象共识";
+            vTitle = "成人极重度 DKA（pH < 6.90）：伴循环抑制时可小剂量试滴";
+            vDetail = "务必先确认 K⁺ ≥ 3.5 mmol/L 并同步补钾，仅作为极重度酸血症的短期过渡，不可替代补液与胰岛素。";
+            vTarget = "停药终点：动脉血 pH 升至 7.00 即停药";
+          } else {
+            vStyle = "bg-red-50 border-red-400 text-red-950";
+            vBadge = "不推荐常规补碱";
+            vBadgeCls = "bg-red-600 text-white";
+            vGuide = "ADA / ISPAD 指南";
+            vTitle = "成人 DKA（pH ≥ 6.90）：常规不推荐静脉补碱";
+            vDetail = "充分补液联合胰岛素即可促使酮酸氧化再生内源性 HCO₃⁻；盲目补碱易诱发低钾与反常性脑脊液酸中毒（2024 共识仅在 pH < 7.0 时个体化考虑）。";
+            vTarget = "优先补液、评估血钾（<3.5 先补钾）并予胰岛素";
+          }
+        } else if (scenario === "ca") {
+          vStyle = "bg-red-50 border-red-400 text-red-950";
+          vBadge = "不推荐常规使用";
+          vBadgeCls = "bg-red-600 text-white";
+          vGuide = "AHA / ERC 复苏指南";
+          vTitle = "常规心脏骤停不推荐盲目推注碳酸氢钠";
+          vDetail = "核心在于高质量胸外按压与有效人工通气；仅在高钾血症、TCA 中毒或既有重度代酸且已建立可靠人工通气时考虑。";
+          vTarget = "前提：已建立有效气管插管人工通气";
+        } else if (scenario === "ckd") {
+          if (hco3 !== null && hco3 <= 18) {
+            vStyle = "bg-emerald-50 border-emerald-500 text-emerald-950";
+            vBadge = "推荐口服维持";
+            vBadgeCls = "bg-emerald-700 text-white";
+            vGuide = "KDIGO / 中国 CKD 专家共识";
+            vTitle = "CKD 血清 HCO₃⁻ ≤ 18 mmol/L：推荐长期口服补碱";
+            vDetail = "口服碳酸氢钠有助于延缓肾功能进展与肌少症；注意死亡率呈 U 型曲线（<22 或 >29 mmol/L 均升高），避免过度碱化。";
+            vTarget = "长期维持目标：血清 HCO₃⁻ 22–26 mmol/L（避开 >29）";
+          } else {
+            vStyle = "bg-slate-50 border-slate-300 text-slate-800";
+            vBadge = "暂观察随访";
+            vBadgeCls = "bg-slate-600 text-white";
+            vGuide = "KDIGO / 中国 CKD 专家共识";
+            vTitle = "CKD 血清 HCO₃⁻ > 18 mmol/L：定期监测，避免过度碱化";
+            vDetail = "保持血清 HCO₃⁻ 在 22–26 mmol/L 区间即可，切忌超过 29 mmol/L。";
+            vTarget = "随访目标：22–26 mmol/L";
+          }
+        } else if (scenario === "nagma") {
+          if (ph <= 7.25) {
+            vStyle = "bg-emerald-50 border-emerald-500 text-emerald-950";
+            vBadge = "推荐对因补碱";
+            vBadgeCls = "bg-emerald-700 text-white";
+            vGuide = "肾脏病与重症专家共识";
+            vTitle = "正常 AG 失碱型代酸：推荐补充丢失碱储备";
+            vDetail = "肠瘘、重度腹泻或 RTA 属于直接丢失 HCO₃⁻，外源性补碱疗效确切；若为大量生理盐水致高氯性酸中毒，请优先换用平衡盐液。";
+            vTarget = "参考停药目标：pH ≈ 7.30 或 HCO₃⁻ 15–18 mmol/L";
+          } else {
+            vStyle = "bg-amber-50 border-amber-400 text-amber-950";
+            vBadge = "轻中度优先病因处理";
+            vBadgeCls = "bg-amber-600 text-white";
+            vGuide = "围术期酸碱管理共识";
+            vTitle = "轻中度正常 AG 代酸：优先控制失碱与减少氯负荷";
+            vDetail = "先停用多余 0.9% 生理盐水、改用平衡盐晶体液并评估钾/氯平衡，动态复查血气。";
+            vTarget = "动态复查，无需急于高渗静推";
+          }
+        } else if (scenario === "sepsis" || scenario === "aki") {
+          if (ph <= 7.20 && (hasAki || scenario === "aki") && !respAcidosis && hasVent) {
+            vStyle = "bg-emerald-50 border-emerald-500 text-emerald-950";
+            vBadge = "条件性推荐（减少 RRT）";
+            vBadgeCls = "bg-emerald-700 text-white";
+            vGuide = "BICARICU-2 (2025) · KDIGO 2026 草案 2C · SSC";
+            vTitle = "符合重度酸血症（pH ≤ 7.20）合并中重度 AKI 指征，可分次滴定补碱";
+            vDetail = "循证提示不降 90 天死亡率（62.1% vs 61.7%），但可显著降低 28 天 RRT 启动率（35% vs 50%，NNT ≈ 6.3）并推迟透析启动。";
+            vTarget = "滴定目标：维持 pH ≈ 7.30，同步严密监测 Na⁺ / K⁺ / iCa²⁺";
+          } else if (respAcidosis || !hasVent) {
+            vStyle = "bg-red-50 border-red-400 text-red-950";
+            vBadge = "暂缓补碱 · 先纠通气";
+            vBadgeCls = "bg-red-600 text-white";
+            vGuide = "通气排碳前提未满足";
+            vTitle = "存在明显呼吸性酸中毒或通气受限，严禁先补碱";
+            vDetail = "请先排查气道、回路、呼吸机分钟通气量与气腹负荷；通气改善后 10–15 min 复查血气再判断是否仍需补碱。";
+            vTarget = "首要动作：恢复有效肺泡通气排碳";
+          } else {
+            vStyle = "bg-red-50 border-red-400 text-red-950";
+            vBadge = "不推荐常规补碱";
+            vBadgeCls = "bg-red-600 text-white";
+            vGuide = "SSC 2021/2026 · SODa-BIC (2026)";
+            vTitle = "未达 pH ≤ 7.20 合并中重度 AKI 门槛，反对单纯为升压或降乳酸补碱";
+            vDetail = "SODa-BIC（n > 700）与 SSC 指南均不支持对单纯低灌注高乳酸血症常规补碱；请优先抗感染、止血与改善组织灌注。";
+            vTarget = "首要动作：病因复苏与血流动力学优化";
+          }
+        } else {
+          // or_mixed
+          if (respAcidosis || !hasVent) {
+            vStyle = "bg-red-50 border-red-400 text-red-950";
+            vBadge = "暂缓补碱 · 先调通气";
+            vBadgeCls = "bg-red-600 text-white";
+            vGuide = "围术期混合酸中毒原则";
+            vTitle = "先补齐信息并优先处理通气 / 气腹 CO₂ 潴留";
+            vDetail = "术中 PaCO₂ 明显升高时，直接补碱会增加 CO₂ 负荷；应先优化分钟通气量、核查气腹压力与液体氯负荷，10–15 min 复查血气后再决定。";
+            vTarget = "复查项目：pH、PaCO₂、HCO₃⁻、Na⁺、K⁺、iCa²⁺、乳酸";
+          } else if (ph <= 7.20 && hasAki) {
+            vStyle = "bg-amber-50 border-amber-400 text-amber-950";
+            vBadge = "个体化谨慎考虑";
+            vBadgeCls = "bg-amber-600 text-white";
+            vGuide = "术中证据外推边界提醒";
+            vTitle = "重度酸血症伴 AKI：在通气与病因可控前提下可小剂量滴定";
+            vDetail = "ICU 试验阈值不默认等同于术中处方；若确需缓冲，建议首剂减半慢滴，10–15 min 后复查血气并联看通气与电解质。";
+            vTarget = "参考停药目标：pH ≈ 7.30，不强行追至 7.40";
+          } else {
+            vStyle = "bg-amber-50 border-amber-400 text-amber-950";
+            vBadge = "暂缓补碱 · 治本优先";
+            vBadgeCls = "bg-amber-600 text-white";
+            vGuide = "围术期酸碱管理原则";
+            vTitle = "优先控制术中出血、低灌注与氯负荷，暂不常规补碱";
+            vDetail = "排查隐匿失血、低心排、大量生理盐水输注及气腹影响，动态追踪乳酸与血气趋势。";
+            vTarget = "10–15 min 复查血气与乳酸趋势";
+          }
+        }
+
+        const vTone = vStyle.indexOf("emerald") !== -1 ? "ok" : vStyle.indexOf("red") !== -1 ? "danger" : vStyle.indexOf("slate") !== -1 ? "muted" : "warn";
+        $("verdictBox").className = "verdict verdict--" + vTone;
+        $("verdictBadge").className = "verdict-badge verdict-badge--" + vTone;
+        $("verdictBadge").textContent = vBadge;
+        $("verdictGuideline").textContent = vGuide;
+        $("verdictTitle").textContent = vTitle;
+        $("verdictDetail").textContent = vDetail;
+        $("verdictTarget").textContent = vTarget;
+
+        updateDosing();
+      }
+
+      function updateDosing() {
+        const w = numVal("doseWeight") || 0;
+        const absBe = Math.abs(numVal("doseBe") || 0);
+        const factor = parseFloat($("doseFactor").value) || 0.2;
+        const fracPct = parseInt($("doseFraction").value, 10) || 50;
+        const mins = parseInt($("doseMinutes").value, 10) || 45;
+
+        $("lblFraction").textContent = fracPct + "% " + (fracPct === 50 ? "(1/2)" : fracPct <= 34 ? "(≈1/3)" : "");
+        $("lblMinutes").textContent = mins + " 分钟";
+
+        const totalMmol = absBe * w * factor;
+        const initMmol = totalMmol * (fracPct / 100);
+        // Domestic 5%: 5g/100mL / 84 g/mol = 0.5952 mmol/mL
+        const vol5 = initMmol / 0.5952;
+        const vol84 = initMmol / 1.0;
+        const vol42 = initMmol / 0.5;
+        const rate5 = mins > 0 ? (vol5 / (mins / 60)) : 0;
+        const rate84 = mins > 0 ? (vol84 / (mins / 60)) : 0;
+
+        $("outTotalMmol").textContent = totalMmol.toFixed(0) + " mmol";
+        $("outInitMmol").textContent = initMmol.toFixed(0) + " mmol";
+        $("outInitNa").textContent = "同步带入 Na⁺ " + initMmol.toFixed(0) + " mmol";
+        $("outVol5").textContent = vol5.toFixed(0) + " mL";
+        $("outRate5").textContent = "泵速约 " + rate5.toFixed(0) + " mL/h";
+        $("outVol84").textContent = "8.4%：" + vol84.toFixed(0) + " mL";
+        $("outVol42").textContent = "4.2%：" + vol42.toFixed(0) + " mL";
+
+        const max84Rate = w * 1.5;
+        const warnBox = $("outRateWarning");
+        if (w > 0 && rate84 > max84Rate) {
+          warnBox.className = "notice notice--amber";
+          warnBox.innerHTML = "<strong>滴速提醒：</strong>按 8.4% 折算速率（" + rate84.toFixed(0) + " mL/h）已超过 CVC 常规上限（1.5 mL/kg/h = " + max84Rate.toFixed(0) + " mL/h），建议延长滴注时间至 60 min 或分次复查后追加。国内 5% 原液渗透压约 1190 mOsm/L，原则上须走独立 CVC。";
+        } else {
+          warnBox.className = "notice notice--muted";
+          warnBox.innerHTML = "<strong>通道与复查建议：</strong>国内 5%（≈1190 mOsm/L）与 8.4%（≈2000 mOsm/L）均属高渗液，须经独立中心静脉（CVC）滴注；首剂滴完后 <strong>10–15 min</strong> 复查动脉血气及 Na⁺、K⁺、iCa²⁺。";
+        }
+
+        // Quick reverse conversion
+        const qMmol = numVal("quickMmol") || 0;
+        const q5 = qMmol / 0.5952;
+        $("outQuickResult").textContent = "国内 5% 液约 " + q5.toFixed(1) + " mL（8.4% 液 " + qMmol.toFixed(0) + " mL）";
+
+        // Dilution panel
+        const stock = $("dilStock").value;
+        const finalVol = parseInt($("dilFinalVol").value, 10) || 500;
+        const ratio = finalVol / 500;
+        if (stock === "5") {
+          const addVol = Math.round(125 * ratio);
+          const grams = (addVol * 0.05).toFixed(2);
+          $("dilConcBadge").textContent = "终浓度 1.25%（等渗）";
+          $("dilSteps").innerHTML =
+            "<li>取 <strong>" + finalVol + " mL 5% 葡萄糖注射液</strong>，先抽出并弃去 <strong>" + addVol + " mL</strong>；</li>" +
+            "<li>再加入 <strong>国内 5% 碳酸氢钠原液 " + addVol + " mL</strong>（含碳酸氢钠 " + grams + " g），混匀定容至 <strong>" + finalVol + " mL</strong>。</li>";
+          $("dilOsmInfo").textContent = "所得等渗液浓度 = " + grams + " g ÷ " + finalVol + " mL = 1.25%（约 149 mmol/L，理论渗透压 ≈ 298 mOsm/L），可经外周大静脉缓慢滴注。";
+        } else {
+          const addVol = Math.round(75 * ratio);
+          const grams = (addVol * 0.084).toFixed(2);
+          $("dilConcBadge").textContent = "终浓度 1.26%（等渗）";
+          $("dilSteps").innerHTML =
+            "<li>取 <strong>" + finalVol + " mL 5% 葡萄糖注射液</strong>，先抽出并弃去 <strong>" + addVol + " mL</strong>；</li>" +
+            "<li>再加入 <strong>8.4% 碳酸氢钠原液 " + addVol + " mL</strong>（含碳酸氢钠 " + grams + " g），混匀定容至 <strong>" + finalVol + " mL</strong>。</li>";
+          $("dilOsmInfo").textContent = "所得等渗液浓度 = " + grams + " g ÷ " + finalVol + " mL = 1.26%（150 mmol/L，理论渗透压 ≈ 300 mOsm/L），可经外周大静脉缓慢滴注。";
+        }
+        $("dilMaxRate").textContent = (w * 10).toFixed(0);
+      }
+
+      function renderDrugCompat(key) {
+        state.selectedDrug = key;
+        const info = DRUG_INFO[key];
+        document.querySelectorAll(".drug-chip").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.drug === key);
+        });
+        const box = $("drugCompatResult");
+        box.className = info.level === "danger" ? "compat-box compat-box--danger" : "compat-box compat-box--ok";
+        box.innerHTML = '<div class="compat-title">' + info.title + '</div><div class="alert-body">' + info.desc + '</div>';
+      }
+
+      function updateChecklist() {
+        const boxes = document.querySelectorAll(".safety-chk");
+        const checked = Array.from(boxes).filter((b) => b.checked).length;
+        $("chkProgress").textContent = checked + " / " + boxes.length + " 已核对";
+        $("chkDoneBanner").classList.toggle("hidden", checked !== boxes.length);
+      }
+
+      function applyPreset(name) {
+        const p = PRESETS[name];
+        $("inScenario").value = p.scenario;
+        $("chkAki").checked = p.aki;
+        $("chkVent").checked = p.vent;
+        $("chkPediatric").checked = p.pediatric;
+        $("chkUrgentRrt").checked = p.urgentRrt;
+        $("inPh").value = p.ph;
+        $("inPaco2").value = p.paco2;
+        $("inHco3").value = p.hco3;
+        $("inBe").value = p.be;
+        $("inNa").value = p.na;
+        $("inCl").value = p.cl;
+        $("inK").value = p.k;
+        $("inIca").value = p.ica;
+        $("inWeight").value = p.weight;
+        updateAssessment();
+        showToast("已载入预设教学病例");
+      }
+
+      // Wire events
+      $("tabBtnAssess").addEventListener("click", () => switchTab("assess"));
+      $("tabBtnDose").addEventListener("click", () => switchTab("dose"));
+      $("tabBtnSafety").addEventListener("click", () => switchTab("safety"));
+      $("btnGoDose").addEventListener("click", () => switchTab("dose"));
+
+      $("presetSepsis").addEventListener("click", () => applyPreset("sepsis"));
+      $("presetOrCase").addEventListener("click", () => applyPreset("orCase"));
+      $("presetDka").addEventListener("click", () => applyPreset("dka"));
+      $("presetNagma").addEventListener("click", () => applyPreset("nagma"));
+      $("presetReset").addEventListener("click", () => {
+        ["inPh", "inPaco2", "inHco3", "inBe", "inNa", "inCl", "inK", "inIca"].forEach((id) => { $(id).value = ""; });
+        updateAssessment();
+        showToast("已清空血气输入框");
+      });
+
+      ["inScenario", "chkAki", "chkVent", "chkPediatric", "chkUrgentRrt", "inPh", "inPaco2", "inHco3", "inBe", "inNa", "inCl", "inK", "inIca", "inWeight"].forEach((id) => {
+        $(id).addEventListener("input", updateAssessment);
+        $(id).addEventListener("change", updateAssessment);
+      });
+
+      ["doseWeight", "doseBe", "doseFactor", "doseFraction", "doseMinutes", "quickMmol", "dilStock", "dilFinalVol"].forEach((id) => {
+        $(id).addEventListener("input", updateDosing);
+        $(id).addEventListener("change", updateDosing);
+      });
+
+      $("drugChipGroup").addEventListener("click", (e) => {
+        const btn = e.target.closest(".drug-chip");
+        if (btn && btn.dataset.drug) renderDrugCompat(btn.dataset.drug);
+      });
+
+      document.querySelectorAll(".safety-chk").forEach((box) => {
+        box.addEventListener("change", updateChecklist);
+      });
+
+      // Init
+      updateAssessment();
+      renderDrugCompat("ne");
+      updateChecklist();
+    })();
+  </script>
+</body>
+</html>
